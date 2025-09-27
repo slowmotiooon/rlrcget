@@ -1,11 +1,11 @@
 use super::args::Args;
 use clap::Parser;
+use color_eyre::Result;
 use config::Config;
 use serde::Deserialize;
-use std::error::Error;
+use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::{env, io};
 
 #[derive(Deserialize, Debug)]
 pub struct AppConfig {
@@ -18,7 +18,7 @@ pub struct PathConfig {
     pub lrc_path: Option<PathBuf>,
 }
 
-pub fn parse_config() -> Result<AppConfig, Box<dyn Error>> {
+pub fn parse_config() -> Result<AppConfig> {
     // first: from arguments
     let mut config_builder = Config::builder();
     if let Some(p) = Args::parse().config {

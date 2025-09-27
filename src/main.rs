@@ -1,8 +1,14 @@
-use rlrcget::app;
+use color_eyre::Result;
 use rlrcget::model::config::parse_config;
-use std::error::Error;
+use rlrcget::{AppContext, app};
 
-fn main() -> Result<(), Box<dyn Error>> {
-    let app_config = parse_config()?;
-    app(app_config)
+fn main() -> Result<()> {
+    let mut context = AppContext {
+        config: parse_config()?,
+        exit: false,
+    };
+    let mut terminal = ratatui::init();
+    let result = app(&mut terminal, context);
+    ratatui::restore();
+    result
 }
