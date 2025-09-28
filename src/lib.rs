@@ -12,8 +12,7 @@ pub struct AppContext {
 
 pub fn app(terminal: &mut DefaultTerminal, mut context: AppContext) -> Result<()> {
     while !context.exit {
-        terminal
-            .draw(|frame| view::draw(&mut context, frame).expect("Error occurred when drawing."))?;
+        terminal.draw(|frame| view::draw(&context, frame))?;
         view::handle_events(&mut context)?;
     }
     Ok(())
