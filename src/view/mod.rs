@@ -1,6 +1,11 @@
 pub mod music;
 
-use crate::{AppContext, model::view::Views, view::music::MusicSelection};
+use crate::{
+    AppContext,
+    message::{AppMsg, update},
+    model::view::Views,
+    view::music::MusicSelection,
+};
 use color_eyre::eyre::{Ok, Result};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::Frame;
@@ -20,14 +25,13 @@ pub fn handle_events(context: &mut AppContext) -> Result<()> {
         Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
             handle_key_event(context, key_event)
         }
-        _ => {}
+        _ => Ok(()),
     }
-    Ok(())
 }
 
-fn handle_key_event(context: &mut AppContext, key_event: KeyEvent) {
+fn handle_key_event(context: &mut AppContext, key_event: KeyEvent) -> Result<()> {
     match key_event.code {
-        KeyCode::Char('q') => context.exit = true,
-        _ => {}
+        KeyCode::Char('q') => update(context, AppMsg::Exit),
+        _ => Ok(()),
     }
 }

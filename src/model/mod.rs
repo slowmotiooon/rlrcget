@@ -1,6 +1,6 @@
 pub mod args;
 mod config;
-mod music;
+pub mod music;
 pub mod view;
 
 use crate::model::{config::parse_config, view::ViewContext};

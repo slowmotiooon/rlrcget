@@ -1,4 +1,3 @@
-use color_eyre::Result;
 use std::path::PathBuf;
 
 pub struct MusicContext {
@@ -19,6 +18,6 @@ pub struct Music {
     pub title: String,
     pub album: String,
     pub artist: String,
-    pub duration: i32,
+    pub duration: u64,
     pub path: PathBuf,
 }
