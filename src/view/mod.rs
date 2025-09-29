@@ -2,7 +2,7 @@ pub mod music;
 
 use crate::{
     AppContext,
-    message::{AppMsg, update},
+    message::{AppMsg, music::MusicMsg, update},
     model::view::Views,
     view::music::MusicSelection,
 };
@@ -37,6 +37,8 @@ pub fn handle_events(context: &mut AppContext) -> Result<()> {
 fn handle_key_event(context: &mut AppContext, key_event: KeyEvent) -> Result<()> {
     match key_event.code {
         KeyCode::Char('q') => update(context, AppMsg::Exit),
+        KeyCode::Char('j') => update(context, AppMsg::Music(MusicMsg::SelectNext)),
+        KeyCode::Char('k') => update(context, AppMsg::Music(MusicMsg::SelectPrevious)),
         _ => Ok(()),
     }
 }

@@ -61,10 +61,13 @@ impl<'a> StatefulWidget for &MusicTable<'a> {
             Constraint::Percentage(10),
         ];
         let header = Row::new(vec!["Title", "Artist", "Album", "Duration"])
-            .style(Style::new().bold())
+            .style(Style::new().bold().blue())
             .bottom_margin(1);
         let block = Block::new().title("Musics").borders(Borders::all());
-        let table = Table::new(rows, widths).header(header).block(block);
+        let table = Table::new(rows, widths)
+            .header(header)
+            .block(block)
+            .row_highlight_style(Style::default().reversed());
         StatefulWidget::render(table, area, buf, state);
     }
 }

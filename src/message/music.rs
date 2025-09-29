@@ -13,12 +13,16 @@ use walkdir::WalkDir;
 pub enum MusicMsg {
     MusicUpdate,
     ChangeSelected(usize),
+    SelectPrevious,
+    SelectNext,
 }
 
 pub fn music_update(context: &mut AppContext, msg: MusicMsg) -> Result<()> {
     match msg {
         MusicMsg::MusicUpdate => update_music_list(context),
         MusicMsg::ChangeSelected(idx) => Ok(select_music(context, idx)),
+        MusicMsg::SelectNext => Ok(select_next(context)),
+        MusicMsg::SelectPrevious => Ok(select_previous(context)),
     }
 }
 
@@ -74,9 +78,37 @@ fn update_music_list(context: &mut AppContext) -> Result<()> {
 }
 
 fn select_music(context: &mut AppContext, idx: usize) {
-    context.music.selected_idx = if context.music.music_list.is_empty() {
-        None
-    } else {
-        Some(idx)
-    };
+    context.view.music_selection_state.music_table_state.select(
+        if context.music.music_list.is_empty() {
+            None
+        } else {
+            Some(idx)
+        },
+    );
+}
+
+fn select_next(context: &mut AppContext) {
+    if let Some(idx) = context
+        .view
+        .music_selection_state
+        .music_table_state
+        .selected()
+    {
+        if context.music.music_list.len() > idx + 1 {
+            select_music(context, idx + 1);
+        }
+    }
+}
+
+fn select_previous(context: &mut AppContext) {
+    if let Some(idx) = context
+        .view
+        .music_selection_state
+        .music_table_state
+        .selected()
+    {
+        if idx > 0 {
+            select_music(context, idx - 1);
+        }
+    }
 }
