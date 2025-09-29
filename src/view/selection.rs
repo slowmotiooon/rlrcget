@@ -2,13 +2,14 @@ use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
     style::{Style, Stylize},
-    widgets::{Block, Borders, Cell, Row, StatefulWidget, Table, TableState, Widget},
+    widgets::{Block, Borders, Cell, Paragraph, Row, StatefulWidget, Table, TableState, Widget},
 };
 
-use crate::model::music::MusicContext;
+use crate::model::{lyrics::LyricsContext, music::MusicContext};
 
 pub struct MusicSelection<'a> {
     pub music_context: &'a MusicContext,
+    pub lyrics_context: &'a LyricsContext,
 }
 
 pub struct MusicSelectionState {
@@ -29,7 +30,9 @@ impl<'a> StatefulWidget for &MusicSelection<'a> {
         let table = MusicTable {
             music_context: self.music_context,
         };
-        let lyric = LyricBlock;
+        let lyric = LyricBlock {
+            context: self.lyrics_context,
+        };
         let layout = Layout::default()
             .direction(ratatui::layout::Direction::Horizontal)
             .constraints([Constraint::Percentage(65), Constraint::Percentage(35)])
@@ -81,11 +84,40 @@ impl<'a> StatefulWidget for &MusicTable<'a> {
     }
 }
 
-pub struct LyricBlock;
+pub struct LyricBlock<'a> {
+    context: &'a LyricsContext,
+}
 
-impl Widget for &LyricBlock {
+impl<'a> Widget for &LyricBlock<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let block = Block::new().title("Lyric").borders(Borders::all());
-        Widget::render(block, area, buf);
+        if let Some(lyrics) = &self.context.current_lyrics {
+            let lyrics_list = Table::new(
+                lyrics.lines.iter().map(|line| -> Row {
+                    let timestamp = if let Some(ts) = line.timestamp {
+                        format!(
+                            "[{:02}:{:02}.{:03}]",
+                            ts.as_secs() / 60,
+                            ts.as_secs() % 60,
+                            ts.subsec_millis()
+                        )
+                    } else {
+                        "[--:--.---]".to_string()
+                    };
+                    let ts_cell = Cell::from(timestamp).style(Style::default().blue().italic());
+                    Row::new(vec![ts_cell, Cell::from(line.text.as_str())])
+                }),
+                [Constraint::Length(11), Constraint::Min(10)],
+            )
+            .block(block);
+            Widget::render(lyrics_list, area, buf);
+        } else {
+            let empty_message = Paragraph::new("No lyrics available.").block(block).style(
+                Style::default()
+                    .fg(ratatui::style::Color::DarkGray)
+                    .italic(),
+            );
+            Widget::render(empty_message, area, buf);
+        }
     }
 }

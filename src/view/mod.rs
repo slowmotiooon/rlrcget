@@ -1,10 +1,10 @@
-pub mod music;
+pub mod selection;
 
 use crate::{
     AppContext,
-    message::{AppMsg, music::MusicMsg, update},
+    message::{AppMsg, lyrics::LyricsMsg, music::MusicMsg, update},
     model::view::Views,
-    view::music::MusicSelection,
+    view::selection::MusicSelection,
 };
 use color_eyre::eyre::{Ok, Result};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
@@ -15,6 +15,7 @@ pub fn draw(context: &mut AppContext, frame: &mut Frame) {
         Views::MusicTable => {
             let music_table = MusicSelection {
                 music_context: &context.music,
+                lyrics_context: &context.lyrics,
             };
             frame.render_stateful_widget(
                 &music_table,
@@ -37,9 +38,15 @@ pub fn handle_events(context: &mut AppContext) -> Result<()> {
 fn handle_key_event(context: &mut AppContext, key_event: KeyEvent) -> Result<()> {
     match key_event.code {
         KeyCode::Char('q') => update(context, AppMsg::Exit),
-        KeyCode::Char('j') | KeyCode::Down => update(context, AppMsg::Music(MusicMsg::SelectNext)),
+        KeyCode::Char('j') | KeyCode::Down => {
+            update(context, AppMsg::Music(MusicMsg::SelectNext))?;
+            update(context, AppMsg::Lyrics(LyricsMsg::LoadLyricsPreview))?;
+            Ok(())
+        }
         KeyCode::Char('k') | KeyCode::Up => {
-            update(context, AppMsg::Music(MusicMsg::SelectPrevious))
+            update(context, AppMsg::Music(MusicMsg::SelectPrevious))?;
+            update(context, AppMsg::Lyrics(LyricsMsg::LoadLyricsPreview))?;
+            Ok(())
         }
         _ => Ok(()),
     }

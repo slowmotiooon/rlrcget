@@ -1,4 +1,4 @@
-use crate::view::music::MusicSelectionState;
+use crate::view::selection::MusicSelectionState;
 
 pub enum Views {
     MusicTable,

@@ -1,10 +1,10 @@
 pub mod args;
 mod config;
-pub mod lyric;
+pub mod lyrics;
 pub mod music;
 pub mod view;
 
-use crate::model::{config::parse_config, view::ViewContext};
+use crate::model::{config::parse_config, lyrics::LyricsContext, view::ViewContext};
 use color_eyre::Result;
 use config::{AppConfig, ConfigSources};
 use music::MusicContext;
@@ -14,6 +14,7 @@ pub struct AppContext {
     pub config: AppConfig,
     pub exit: bool,
     pub music: MusicContext,
+    pub lyrics: LyricsContext,
     pub view: ViewContext,
 }
 
@@ -24,6 +25,7 @@ impl AppContext {
             config: parse_config(ConfigSources::default())?,
             exit: false,
             music: MusicContext::new(),
+            lyrics: LyricsContext::new(),
             view: ViewContext::new(),
         })
     }

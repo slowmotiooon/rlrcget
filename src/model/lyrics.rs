@@ -1,6 +1,18 @@
 use std::time::Duration;
 
-pub struct Lyric {
+pub struct LyricsContext {
+    pub current_lyrics: Option<Lyrics>,
+}
+
+impl LyricsContext {
+    pub fn new() -> LyricsContext {
+        LyricsContext {
+            current_lyrics: None,
+        }
+    }
+}
+
+pub struct Lyrics {
     pub ti: Option<String>,
     pub ar: Option<String>,
     pub al: Option<String>,
@@ -10,6 +22,7 @@ pub struct Lyric {
     pub au: Option<String>,
     pub re: Option<String>,
     pub lines: Vec<LyricLine>,
+    pub raw: Option<String>,
 }
 
 pub struct LyricLine {
@@ -17,9 +30,9 @@ pub struct LyricLine {
     pub text: String,
 }
 
-impl Lyric {
-    pub fn new() -> Lyric {
-        Lyric {
+impl Lyrics {
+    pub fn new() -> Lyrics {
+        Lyrics {
             ti: None,
             ar: None,
             al: None,
@@ -29,58 +42,60 @@ impl Lyric {
             au: None,
             re: None,
             lines: vec![],
+            raw: None,
         }
     }
 
-    pub fn from_str(s: String) -> Lyric {
-        let mut lyric = Lyric::new();
+    pub fn from_str(s: String) -> Lyrics {
+        let mut lyrics = Lyrics::new();
+        lyrics.raw = Some(s.clone());
         s.lines().for_each(|line| {
             let line = line.trim();
             if line.starts_with("[ti:") && line.ends_with(']') {
                 let content = &line[4..line.len() - 1];
                 if !content.is_empty() {
-                    lyric.ti = Some(content.to_string());
+                    lyrics.ti = Some(content.to_string());
                 }
             } else if line.starts_with("[ar:") && line.ends_with(']') {
                 let content = &line[4..line.len() - 1];
                 if !content.is_empty() {
-                    lyric.ar = Some(content.to_string());
+                    lyrics.ar = Some(content.to_string());
                 }
             } else if line.starts_with("[al:") && line.ends_with(']') {
                 let content = &line[4..line.len() - 1];
                 if !content.is_empty() {
-                    lyric.al = Some(content.to_string());
+                    lyrics.al = Some(content.to_string());
                 }
             } else if line.starts_with("[offset:") && line.ends_with(']') {
                 let content = &line[8..line.len() - 1];
                 if let Ok(value) = content.parse::<i64>() {
-                    lyric.offset = Some(value);
+                    lyrics.offset = Some(value);
                 }
             } else if line.starts_with("[by:") && line.ends_with(']') {
                 let content = &line[4..line.len() - 1];
                 if !content.is_empty() {
-                    lyric.by = Some(content.to_string());
+                    lyrics.by = Some(content.to_string());
                 }
             } else if line.starts_with("[ve:") && line.ends_with(']') {
                 let content = &line[4..line.len() - 1];
                 if !content.is_empty() {
-                    lyric.ve = Some(content.to_string());
+                    lyrics.ve = Some(content.to_string());
                 }
             } else if line.starts_with("[au:") && line.ends_with(']') {
                 let content = &line[4..line.len() - 1];
                 if !content.is_empty() {
-                    lyric.au = Some(content.to_string());
+                    lyrics.au = Some(content.to_string());
                 }
             } else if line.starts_with("[re:") && line.ends_with(']') {
                 let content = &line[4..line.len() - 1];
                 if !content.is_empty() {
-                    lyric.re = Some(content.to_string());
+                    lyrics.re = Some(content.to_string());
                 }
             } else if line.starts_with('[') && line.contains(']') {
-                lyric.lines.push(LyricLine::from_str(line.to_string()));
+                lyrics.lines.push(LyricLine::from_str(line.to_string()));
             }
         });
-        lyric
+        lyrics
     }
 }
 
@@ -143,7 +158,7 @@ mod tests {
 [al:Test Album]
 [00:12.34] Hello world
 [00:45.67] This is a test lyric line.";
-        let lrc = Lyric::from_str(String::from(lyric_str));
+        let lrc = Lyrics::from_str(String::from(lyric_str));
         assert_eq!(lrc.ti, Some("Test Song".to_string()));
         assert_eq!(lrc.ar, Some("Test Artist".to_string()));
         assert_eq!(lrc.al, Some("Test Album".to_string()));

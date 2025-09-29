@@ -1,13 +1,16 @@
+pub mod lyrics;
 pub mod music;
 
-use music::MusicMsg;
+use lyrics::{LyricsMsg, lyrics_update};
+use music::{MusicMsg, music_update};
 
-use crate::{message::music::music_update, model::AppContext};
+use crate::model::AppContext;
 use color_eyre::{Result, eyre::Ok};
 
 pub enum AppMsg {
     Init,
     Music(MusicMsg),
+    Lyrics(LyricsMsg),
     Exit,
 }
 
@@ -19,6 +22,7 @@ pub fn update(context: &mut AppContext, msg: AppMsg) -> Result<()> {
             Ok(())
         }
         AppMsg::Music(m) => music_update(context, m),
+        AppMsg::Lyrics(m) => lyrics_update(context, m),
         AppMsg::Exit => {
             context.exit = true;
             Ok(())
