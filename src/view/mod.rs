@@ -10,14 +10,19 @@ use color_eyre::eyre::{Ok, Result};
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::Frame;
 
-pub fn draw(context: &AppContext, frame: &mut Frame) {
-    let music_table = MusicSelection { context };
-    frame.render_widget(
-        match context.view.current {
-            Views::MusicTable => &music_table,
-        },
-        frame.area(),
-    );
+pub fn draw(context: &mut AppContext, frame: &mut Frame) {
+    match context.view.current {
+        Views::MusicTable => {
+            let music_table = MusicSelection {
+                music_context: &context.music,
+            };
+            frame.render_stateful_widget(
+                &music_table,
+                frame.area(),
+                &mut context.view.music_selection_state,
+            );
+        }
+    }
 }
 
 pub fn handle_events(context: &mut AppContext) -> Result<()> {

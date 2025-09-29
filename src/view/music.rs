@@ -1,39 +1,48 @@
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Rect},
-    style::{Color, Style, Stylize},
-    text::{Line, Text},
-    widgets::{Block, Borders, Cell, Row, Table, Widget},
+    style::{Style, Stylize},
+    widgets::{Block, Borders, Cell, Row, StatefulWidget, Table, TableState},
 };
 
-use crate::model::AppContext;
+use crate::model::music::MusicContext;
 
 pub struct MusicSelection<'a> {
-    pub context: &'a AppContext,
+    pub music_context: &'a MusicContext,
 }
 
-impl<'a> Widget for &MusicSelection<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
-        let _music_path = Text::from(self.context.config.path.music_path.to_str().unwrap());
-        let _block = Block::new().style(Style::new().bg(Color::Red));
+pub struct MusicSelectionState {
+    pub music_table_state: TableState,
+}
 
+impl MusicSelectionState {
+    pub fn default() -> MusicSelectionState {
+        MusicSelectionState {
+            music_table_state: TableState::default(),
+        }
+    }
+}
+
+impl<'a> StatefulWidget for &MusicSelection<'a> {
+    type State = MusicSelectionState;
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let table = MusicTable {
-            context: self.context,
+            music_context: self.music_context,
         };
 
-        table.render(area, buf);
+        StatefulWidget::render(&table, area, buf, &mut state.music_table_state);
     }
 }
 
 struct MusicTable<'a> {
-    pub context: &'a AppContext,
+    pub music_context: &'a MusicContext,
 }
 
-impl<'a> Widget for &MusicTable<'a> {
-    fn render(self, area: Rect, buf: &mut Buffer) {
+impl<'a> StatefulWidget for &MusicTable<'a> {
+    type State = TableState;
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let rows = self
-            .context
-            .music
+            .music_context
             .music_list
             .iter()
             .map(|m| {
@@ -56,6 +65,6 @@ impl<'a> Widget for &MusicTable<'a> {
             .bottom_margin(1);
         let block = Block::new().title("Musics").borders(Borders::all());
         let table = Table::new(rows, widths).header(header).block(block);
-        table.render(area, buf);
+        StatefulWidget::render(table, area, buf, state);
     }
 }

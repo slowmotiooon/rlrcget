@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::model::AppContext;
 use crate::model::music::Music;
-use color_eyre::{Report, Result};
+use color_eyre::Result;
 use lofty::{
     file::{AudioFile, TaggedFileExt},
     probe::Probe,
@@ -24,7 +24,15 @@ pub fn music_update(context: &mut AppContext, msg: MusicMsg) -> Result<()> {
 
 fn update_music_list(context: &mut AppContext) -> Result<()> {
     let mut music_list = vec![];
-    for entry in WalkDir::new(context.config.path.music_path.clone()) {
+    let music_path = match &context.config.path.music_path {
+        Some(p) => p,
+        None => {
+            return Err(color_eyre::Report::msg(
+                "No music folder. Please add the music folder in the config file.",
+            ));
+        }
+    };
+    for entry in WalkDir::new(music_path).follow_links(true).max_depth(25) {
         let entry = entry?;
         if entry.file_type().is_file() {
             if let Ok(tagged_file) = Probe::open(entry.path()).expect("Bad path provided").read() {

@@ -1,63 +1,87 @@
 use super::args::Args;
 use clap::Parser;
 use color_eyre::Result;
-use config::Config;
+use config::{Config, FileFormat};
 use serde::Deserialize;
 use std::env;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+static DEFAULT_CONFIG: &str = include_str!("../../config/config.toml");
+
+/// The application configuration.
 #[derive(Deserialize, Debug)]
 pub struct AppConfig {
     pub path: PathConfig,
 }
 
+/// The path part of the configuration.
 #[derive(Deserialize, Debug)]
 pub struct PathConfig {
-    pub music_path: PathBuf,
+    pub music_path: Option<PathBuf>,
     pub lrc_path: Option<PathBuf>,
 }
 
-pub fn parse_config() -> Result<AppConfig> {
-    // first: from arguments
-    let mut config_builder = Config::builder();
-    if let Some(p) = Args::parse().config {
-        if p.exists() && p.is_file() {
+pub struct ConfigSources {
+    pub cli: Option<PathBuf>,
+    pub xdg_config_home: Option<PathBuf>,
+    pub home: Option<PathBuf>,
+}
+
+impl ConfigSources {
+    /// Collect config files from cli, XDG_CONFIG_HOME and HOME.
+    pub fn default() -> ConfigSources {
+        let cli = Args::parse().config;
+        let xdg_config_home = if let Ok(h) = env::var("XDG_CONFIG_HOME") {
+            PathBuf::from_str(&h).map_or(None, |mut p| {
+                p.push("CARGO_PKG_NAME");
+                p.push("config.toml");
+                Some(p)
+            })
+        } else {
+            None
+        };
+        let home = if let Ok(h) = env::var("HOME") {
+            PathBuf::from_str(&h).map_or(None, |mut p| {
+                p.push(".config");
+                p.push(env!("CARGO_PKG_NAME"));
+                p.push("config.toml");
+                Some(p)
+            })
+        } else {
+            None
+        };
+        ConfigSources {
+            cli,
+            xdg_config_home,
+            home,
+        }
+    }
+}
+
+/// Get config from arguments or/and files.
+pub fn parse_config(sources: ConfigSources) -> Result<AppConfig> {
+    let mut config_builder =
+        Config::builder().add_source(config::File::from_str(DEFAULT_CONFIG, FileFormat::Toml));
+
+    if let Some(p) = sources.home {
+        if p.exists() {
             config_builder = config_builder.add_source(config::File::from(p));
         }
     }
-    // second: from XDG_CONFIG_HOME
-    if let Ok(config_home) = env::var("XDG_CONFIG_HOME") {
-        let mut config_path = PathBuf::from_str(&config_home)?;
-        config_path.push(env!("CARGO_PKG_NAME"));
-        config_path.push("config.toml");
-        config_builder = config_builder.add_source(config::File::from(config_path));
+    if let Some(p) = sources.xdg_config_home {
+        if p.exists() {
+            config_builder = config_builder.add_source(config::File::from(p));
+        }
     }
-    // third: from ~/.config
-    let mut user_config_path = PathBuf::from_str(&env::var("HOME")?)?;
-    user_config_path.push(env!("CARGO_PKG_NAME"));
-    user_config_path.push("config.toml");
-    if user_config_path.exists() {
-        config_builder = config_builder.add_source(config::File::from(user_config_path));
-    }
-    // fourth: from project
-    let proj_config_path = PathBuf::from_str("config/config.toml")?;
-    if proj_config_path.exists() {
-        config_builder = config_builder.add_source(config::File::from(proj_config_path));
+    if let Some(p) = sources.cli {
+        if p.exists() {
+            config_builder = config_builder.add_source(config::File::from(p));
+        }
     }
 
     match config_builder.build()?.try_deserialize::<AppConfig>() {
         Ok(config) => Ok(config),
         Err(e) => Err(e.into()),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn config_path_test() {
-        let config = PathBuf::from_str("~/.config");
-        println!("{:?}", config);
     }
 }
