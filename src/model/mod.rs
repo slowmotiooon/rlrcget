@@ -1,5 +1,6 @@
 pub mod args;
 mod config;
+pub mod lyric;
 pub mod music;
 pub mod view;
 

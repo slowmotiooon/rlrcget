@@ -1,8 +1,8 @@
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Rect},
+    layout::{Constraint, Layout, Rect},
     style::{Style, Stylize},
-    widgets::{Block, Borders, Cell, Row, StatefulWidget, Table, TableState},
+    widgets::{Block, Borders, Cell, Row, StatefulWidget, Table, TableState, Widget},
 };
 
 use crate::model::music::MusicContext;
@@ -29,8 +29,14 @@ impl<'a> StatefulWidget for &MusicSelection<'a> {
         let table = MusicTable {
             music_context: self.music_context,
         };
+        let lyric = LyricBlock;
+        let layout = Layout::default()
+            .direction(ratatui::layout::Direction::Horizontal)
+            .constraints([Constraint::Percentage(65), Constraint::Percentage(35)])
+            .split(area);
+        Widget::render(&lyric, layout[1], buf);
 
-        StatefulWidget::render(&table, area, buf, &mut state.music_table_state);
+        StatefulWidget::render(&table, layout[0], buf, &mut state.music_table_state);
     }
 }
 
@@ -45,8 +51,10 @@ impl<'a> StatefulWidget for &MusicTable<'a> {
             .music_context
             .music_list
             .iter()
-            .map(|m| {
+            .enumerate()
+            .map(|(idx, m)| {
                 Row::new(vec![
+                    Cell::from(format!("{}", idx + 1)),
                     Cell::from(m.title.as_str()),
                     Cell::from(m.artist.as_str()),
                     Cell::from(m.album.as_str()),
@@ -55,12 +63,13 @@ impl<'a> StatefulWidget for &MusicTable<'a> {
             })
             .collect::<Vec<Row>>();
         let widths = [
-            Constraint::Percentage(40),
+            Constraint::Percentage(5),
+            Constraint::Percentage(35),
             Constraint::Percentage(20),
             Constraint::Percentage(30),
             Constraint::Percentage(10),
         ];
-        let header = Row::new(vec!["Title", "Artist", "Album", "Duration"])
+        let header = Row::new(vec!["No.", "Title", "Artist", "Album", "Duration"])
             .style(Style::new().bold().blue())
             .bottom_margin(1);
         let block = Block::new().title("Musics").borders(Borders::all());
@@ -69,5 +78,14 @@ impl<'a> StatefulWidget for &MusicTable<'a> {
             .block(block)
             .row_highlight_style(Style::default().reversed());
         StatefulWidget::render(table, area, buf, state);
+    }
+}
+
+pub struct LyricBlock;
+
+impl Widget for &LyricBlock {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        let block = Block::new().title("Lyric").borders(Borders::all());
+        Widget::render(block, area, buf);
     }
 }

@@ -16,4 +16,5 @@ pub struct Music {
     pub artist: String,
     pub duration: u64,
     pub path: PathBuf,
+    pub lyric_path: Option<PathBuf>,
 }

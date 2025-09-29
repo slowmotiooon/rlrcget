@@ -68,6 +68,7 @@ fn update_music_list(context: &mut AppContext) -> Result<()> {
                     artist,
                     duration,
                     path,
+                    lyric_path: None,
                 };
                 music_list.push(music);
             }
