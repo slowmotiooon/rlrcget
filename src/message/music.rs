@@ -30,7 +30,10 @@ pub fn music_update(context: &mut AppContext, msg: MusicMsg) -> Result<()> {
 
 fn get_database_json_path(context: &mut AppContext) -> Result<PathBuf> {
     let mut database_path = context.config.path.database_path.clone().unwrap_or(
-        std::env::home_dir().expect("No home directory.").join(".config").join(env!("CARGO_PKG_NAME"))
+        std::env::home_dir()
+            .expect("No home directory.")
+            .join(".config")
+            .join(env!("CARGO_PKG_NAME")),
     );
     if !database_path.exists() {
         std::fs::create_dir_all(&database_path)?;
@@ -44,7 +47,10 @@ fn get_database_json_path(context: &mut AppContext) -> Result<PathBuf> {
 
 fn load_musics(context: &mut AppContext) -> Result<()> {
     let database_json_path = get_database_json_path(context)?;
-    context.music.music_list = serde_json::from_str(std::fs::read_to_string(database_json_path)?.as_str()).unwrap_or(Vec::new());
+    context.music.set_music_list(
+        serde_json::from_str(std::fs::read_to_string(database_json_path)?.as_str())
+            .unwrap_or(Vec::new()),
+    );
     Ok(())
 }
 
@@ -102,7 +108,7 @@ fn update_library(context: &mut AppContext) -> Result<()> {
 
 fn select_music(context: &mut AppContext, idx: usize) {
     context.view.music_selection_state.music_table_state.select(
-        if context.music.music_list.is_empty() {
+        if context.music.music_list().is_empty() {
             None
         } else {
             Some(idx)
@@ -117,7 +123,7 @@ fn select_next(context: &mut AppContext) {
         .music_table_state
         .selected()
     {
-        if context.music.music_list.len() > idx + 1 {
+        if context.music.music_list().len() > idx + 1 {
             select_music(context, idx + 1);
         }
     }

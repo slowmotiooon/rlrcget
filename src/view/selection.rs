@@ -53,7 +53,8 @@ impl<'a> StatefulWidget for &MusicTable<'a> {
     type State = TableState;
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let block = Block::new().title("Musics").borders(Borders::all());
-        if self.music_context.music_list.is_empty() {
+        let music_list = self.music_context.music_list();
+        if music_list.is_empty() {
             let no_music_str = "No music.
             If this is your first time opening this app, please refresh it with <r> or <F5>.";
             let no_music_paragraph = Paragraph::new(Text::from(no_music_str))
@@ -62,9 +63,7 @@ impl<'a> StatefulWidget for &MusicTable<'a> {
             Widget::render(no_music_paragraph, area, buf);
             return;
         }
-        let rows = self
-            .music_context
-            .music_list
+        let rows = music_list
             .iter()
             .enumerate()
             .map(|(idx, m)| {

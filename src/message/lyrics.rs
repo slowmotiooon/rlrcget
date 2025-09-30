@@ -18,7 +18,7 @@ fn load_lyrics_preview(context: &mut AppContext) -> Result<()> {
         .music_table_state
         .selected()
     {
-        if let Some(music) = context.music.music_list.get(selected) {
+        if let Some(music) = context.music.music_list().get(selected) {
             let mut lyrics_path = music.path.clone();
             lyrics_path.set_extension("lrc");
             if lyrics_path.exists() {
