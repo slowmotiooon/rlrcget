@@ -1,13 +1,12 @@
-use std::path::PathBuf;
-
-use crate::model::AppContext;
 use crate::model::music::Music;
+use crate::{message::AppMsg, model::AppContext};
 use color_eyre::Result;
 use lofty::{
     file::{AudioFile, TaggedFileExt},
     probe::Probe,
     tag::Accessor,
 };
+use std::path::PathBuf;
 use walkdir::WalkDir;
 
 pub enum MusicMsg {
@@ -16,6 +15,7 @@ pub enum MusicMsg {
     ChangeSelected(usize),
     SelectPrevious,
     SelectNext,
+    UpdateLibraryDone(Vec<Music>),
 }
 
 pub fn music_update(context: &mut AppContext, msg: MusicMsg) -> Result<()> {
@@ -25,6 +25,7 @@ pub fn music_update(context: &mut AppContext, msg: MusicMsg) -> Result<()> {
         MusicMsg::ChangeSelected(idx) => Ok(select_music(context, idx)),
         MusicMsg::SelectNext => Ok(select_next(context)),
         MusicMsg::SelectPrevious => Ok(select_previous(context)),
+        MusicMsg::UpdateLibraryDone(music_list) => save_musics(context, music_list),
     }
 }
 
@@ -54,55 +55,70 @@ fn load_musics(context: &mut AppContext) -> Result<()> {
     Ok(())
 }
 
+fn save_musics(context: &mut AppContext, music_list: Vec<Music>) -> Result<()> {
+    let database_json_path = get_database_json_path(context)?;
+    serde_json::to_writer_pretty(std::fs::File::create(&database_json_path)?, &music_list)?;
+    Ok(())
+}
+
 fn update_library(context: &mut AppContext) -> Result<()> {
-    let mut music_list = vec![];
     let music_path = match &context.config.path.music_path {
-        Some(p) => p,
+        Some(p) => p.clone(),
         None => {
             return Err(color_eyre::Report::msg(
                 "No music folder. Please add the music folder in the config file.",
             ));
         }
     };
-    for entry in WalkDir::new(music_path).follow_links(true).max_depth(25) {
-        let entry = entry?;
-        if entry.file_type().is_file() {
-            if let Ok(tagged_file) = Probe::open(entry.path()).expect("Bad path provided").read() {
-                let tag = match tagged_file.primary_tag() {
-                    Some(primary_tag) => primary_tag,
-                    None => tagged_file.first_tag().expect("No tags found."),
-                };
 
-                let title = tag
-                    .title()
-                    .as_deref()
-                    .expect("Title parse error.")
-                    .to_string();
-                let album = tag
-                    .album()
-                    .as_deref()
-                    .expect("Album parse error.")
-                    .to_string();
-                let artist = tag
-                    .artist()
-                    .as_deref()
-                    .expect("Artist parse error.")
-                    .to_string();
-                let duration = tagged_file.properties().duration().as_secs();
-                let path = PathBuf::from(entry.path());
-                let music = Music {
-                    title,
-                    album,
-                    artist,
-                    duration,
-                    path,
-                };
-                music_list.push(music);
+    let tx = context.tx.clone();
+
+    std::thread::spawn(move || {
+        let mut music_list = vec![];
+        for entry in WalkDir::new(music_path).follow_links(true).max_depth(10) {
+            if let Ok(e) = entry {
+                if e.file_type().is_file() {
+                    if let Ok(tagged_file) =
+                        Probe::open(e.path()).expect("Bad path provided").read()
+                    {
+                        let tag = match tagged_file.primary_tag() {
+                            Some(primary_tag) => primary_tag,
+                            None => tagged_file.first_tag().expect("No tags found."),
+                        };
+
+                        let title = tag
+                            .title()
+                            .as_deref()
+                            .expect("Title parse error.")
+                            .to_string();
+                        let album = tag
+                            .album()
+                            .as_deref()
+                            .expect("Album parse error.")
+                            .to_string();
+                        let artist = tag
+                            .artist()
+                            .as_deref()
+                            .expect("Artist parse error.")
+                            .to_string();
+                        let duration = tagged_file.properties().duration().as_secs();
+                        let path = PathBuf::from(e.path());
+                        let music = Music {
+                            title,
+                            album,
+                            artist,
+                            duration,
+                            path,
+                        };
+                        music_list.push(music);
+                    }
+                }
             }
         }
-    }
-    let database_json_path = get_database_json_path(context)?;
-    serde_json::to_writer_pretty(std::fs::File::create(&database_json_path)?, &music_list)?;
+        tx.send(AppMsg::Music(MusicMsg::UpdateLibraryDone(music_list)))
+            .unwrap();
+        tx.send(AppMsg::Music(MusicMsg::LoadMusics)).unwrap();
+    });
     Ok(())
 }
 

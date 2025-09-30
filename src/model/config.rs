@@ -34,12 +34,18 @@ impl ConfigSources {
     pub fn default() -> ConfigSources {
         let cli = Args::parse().config;
         let xdg_config_home = if let Ok(h) = env::var("XDG_CONFIG_HOME") {
-            PathBuf::from_str(&h).map_or(None, |p| Some(p.join(env!("CARGO_PKG_NAME")).join("config.toml")))
+            PathBuf::from_str(&h).map_or(None, |p| {
+                Some(p.join(env!("CARGO_PKG_NAME")).join("config.toml"))
+            })
         } else {
             None
         };
         let home = if let Some(h) = env::home_dir() {
-                Some(h.join(".config").join(env!("CARGO_PKG_NAME")).join("config.toml"))
+            Some(
+                h.join(".config")
+                    .join(env!("CARGO_PKG_NAME"))
+                    .join("config.toml"),
+            )
         } else {
             None
         };

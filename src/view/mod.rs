@@ -6,7 +6,7 @@ use crate::{
     model::view::Views,
     view::selection::MusicSelection,
 };
-use color_eyre::eyre::{Ok, Result};
+use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::Frame;
 
@@ -50,9 +50,6 @@ fn handle_key_event(context: &mut AppContext, key_event: KeyEvent) -> Result<()>
         }
         KeyCode::Char('r') | KeyCode::F(5) => {
             update(context, AppMsg::Music(MusicMsg::UpdateLibrary))?;
-            update(context, AppMsg::Music(MusicMsg::LoadMusics))?;
-            update(context, AppMsg::Music(MusicMsg::ChangeSelected(0)))?;
-            update(context, AppMsg::Lyrics(LyricsMsg::LoadLyricsPreview))?;
             Ok(())
         }
         _ => Ok(()),
