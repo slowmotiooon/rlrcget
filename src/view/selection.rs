@@ -86,7 +86,7 @@ impl<'a> StatefulWidget for &MusicTable<'a> {
             .map(|(idx, m)| {
                 Row::new(vec![
                     Cell::from(format!("{}", idx + 1)),
-                    Cell::from(m.title.as_str()),
+                    Cell::from(m.title.as_str().bold()),
                     Cell::from(m.artist.as_str()),
                     Cell::from(m.album.as_str()),
                     Cell::from(format!("{}s", m.duration)),
