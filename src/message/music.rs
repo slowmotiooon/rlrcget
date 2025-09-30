@@ -62,6 +62,10 @@ fn save_musics(context: &mut AppContext, music_list: Vec<Music>) -> Result<()> {
 }
 
 fn update_library(context: &mut AppContext) -> Result<()> {
+    if context.music.updating {
+        return Ok(());
+    }
+    context.music.updating = true;
     let music_path = match &context.config.path.music_path {
         Some(p) => p.clone(),
         None => {
@@ -119,6 +123,7 @@ fn update_library(context: &mut AppContext) -> Result<()> {
             .unwrap();
         tx.send(AppMsg::Music(MusicMsg::LoadMusics)).unwrap();
     });
+    context.music.updating = false;
     Ok(())
 }
 

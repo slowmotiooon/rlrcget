@@ -1,6 +1,6 @@
 use crate::model::lyrics::LyricsState;
 use crate::model::{lyrics::LyricsContext, music::MusicContext};
-use ratatui::text::Text;
+use ratatui::text::{Line, Text};
 use ratatui::widgets::Wrap;
 use ratatui::{
     buffer::Buffer,
@@ -35,13 +35,30 @@ impl<'a> StatefulWidget for &MusicSelection<'a> {
         let lyric = LyricBlock {
             context: self.lyrics_context,
         };
+
+        let tips = Line::from(vec![
+            "<j><Down> ".blue(),
+            "Next, ".gray(),
+            "<k><Up> ".blue(),
+            "Previous, ".gray(),
+            "<r><F5> ".blue(),
+            "Refresh, ".gray(),
+            "<q> ".red(),
+            "Quit".gray(),
+        ]);
+
+        let vertical_layout = Layout::default()
+            .direction(ratatui::layout::Direction::Vertical)
+            .constraints([Constraint::Fill(1), Constraint::Length(1)])
+            .split(area);
+
         let layout = Layout::default()
             .direction(ratatui::layout::Direction::Horizontal)
             .constraints([Constraint::Percentage(65), Constraint::Percentage(35)])
-            .split(area);
+            .split(vertical_layout[0]);
         Widget::render(&lyric, layout[1], buf);
-
         StatefulWidget::render(&table, layout[0], buf, &mut state.music_table_state);
+        Widget::render(tips, vertical_layout[1], buf);
     }
 }
 

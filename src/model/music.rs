@@ -5,12 +5,14 @@ use std::sync::Arc;
 
 pub struct MusicContext {
     pub music_list: Arc<ArcSwap<Vec<Music>>>,
+    pub updating: bool,
 }
 
 impl MusicContext {
     pub fn new() -> MusicContext {
         MusicContext {
             music_list: Arc::new(ArcSwap::from_pointee(vec![])),
+            updating: false,
         }
     }
 
