@@ -30,6 +30,12 @@ pub struct LyricLine {
     pub text: String,
 }
 
+pub enum LyricsState {
+    Synced,
+    Unsynced,
+    Empty,
+}
+
 impl Lyrics {
     pub fn new() -> Lyrics {
         Lyrics {
@@ -49,7 +55,7 @@ impl Lyrics {
     pub fn from_str(s: String) -> Lyrics {
         let mut lyrics = Lyrics::new();
         lyrics.raw = Some(s.clone());
-        s.lines().for_each(|line| {
+        for line in s.lines() {
             let line = line.trim();
             if line.starts_with("[ti:") && line.ends_with(']') {
                 let content = &line[4..line.len() - 1];
@@ -91,11 +97,21 @@ impl Lyrics {
                 if !content.is_empty() {
                     lyrics.re = Some(content.to_string());
                 }
-            } else if line.starts_with('[') && line.contains(']') {
+            } else {
                 lyrics.lines.push(LyricLine::from_str(line.to_string()));
             }
-        });
+        }
         lyrics
+    }
+
+    pub fn state(&self) -> LyricsState {
+        if self.lines.is_empty() {
+            LyricsState::Empty
+        } else if self.lines.iter().all(|line| line.timestamp.is_some()) {
+            LyricsState::Synced
+        } else {
+            LyricsState::Unsynced
+        }
     }
 }
 

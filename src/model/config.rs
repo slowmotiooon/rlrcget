@@ -20,6 +20,7 @@ pub struct AppConfig {
 pub struct PathConfig {
     pub music_path: Option<PathBuf>,
     pub lrc_path: Option<PathBuf>,
+    pub database_path: Option<PathBuf>,
 }
 
 pub struct ConfigSources {
@@ -33,21 +34,12 @@ impl ConfigSources {
     pub fn default() -> ConfigSources {
         let cli = Args::parse().config;
         let xdg_config_home = if let Ok(h) = env::var("XDG_CONFIG_HOME") {
-            PathBuf::from_str(&h).map_or(None, |mut p| {
-                p.push("CARGO_PKG_NAME");
-                p.push("config.toml");
-                Some(p)
-            })
+            PathBuf::from_str(&h).map_or(None, |p| Some(p.join(env!("CARGO_PKG_NAME")).join("config.toml")))
         } else {
             None
         };
-        let home = if let Ok(h) = env::var("HOME") {
-            PathBuf::from_str(&h).map_or(None, |mut p| {
-                p.push(".config");
-                p.push(env!("CARGO_PKG_NAME"));
-                p.push("config.toml");
-                Some(p)
-            })
+        let home = if let Some(h) = env::home_dir() {
+                Some(h.join(".config").join(env!("CARGO_PKG_NAME")).join("config.toml"))
         } else {
             None
         };

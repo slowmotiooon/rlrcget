@@ -2,4 +2,4 @@ default = true
 
 [path]
 music_path = "/home/slowmotiooon/Desktop/test"
-database_path = "/home/slowmotiooon/.config"
+database_path = "/home/slowmotiooon/.config/rlrcget"

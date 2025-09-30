@@ -17,8 +17,9 @@ pub enum AppMsg {
 pub fn update(context: &mut AppContext, msg: AppMsg) -> Result<()> {
     match msg {
         AppMsg::Init => {
-            update(context, AppMsg::Music(MusicMsg::MusicUpdate))?;
+            update(context, AppMsg::Music(MusicMsg::LoadMusics))?;
             update(context, AppMsg::Music(MusicMsg::ChangeSelected(0)))?;
+            update(context, AppMsg::Lyrics(LyricsMsg::LoadLyricsPreview))?;
             Ok(())
         }
         AppMsg::Music(m) => music_update(context, m),

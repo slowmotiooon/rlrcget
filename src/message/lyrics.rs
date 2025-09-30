@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use crate::{model::AppContext, model::lyrics::Lyrics};
 use color_eyre::Result;
 

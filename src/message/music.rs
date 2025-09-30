@@ -11,7 +11,8 @@ use lofty::{
 use walkdir::WalkDir;
 
 pub enum MusicMsg {
-    MusicUpdate,
+    LoadMusics,
+    UpdateLibrary,
     ChangeSelected(usize),
     SelectPrevious,
     SelectNext,
@@ -19,14 +20,35 @@ pub enum MusicMsg {
 
 pub fn music_update(context: &mut AppContext, msg: MusicMsg) -> Result<()> {
     match msg {
-        MusicMsg::MusicUpdate => update_music_list(context),
+        MusicMsg::LoadMusics => load_musics(context),
+        MusicMsg::UpdateLibrary => update_library(context),
         MusicMsg::ChangeSelected(idx) => Ok(select_music(context, idx)),
         MusicMsg::SelectNext => Ok(select_next(context)),
         MusicMsg::SelectPrevious => Ok(select_previous(context)),
     }
 }
 
-fn update_music_list(context: &mut AppContext) -> Result<()> {
+fn get_database_json_path(context: &mut AppContext) -> Result<PathBuf> {
+    let mut database_path = context.config.path.database_path.clone().unwrap_or(
+        std::env::home_dir().expect("No home directory.").join(".config").join(env!("CARGO_PKG_NAME"))
+    );
+    if !database_path.exists() {
+        std::fs::create_dir_all(&database_path)?;
+    }
+    database_path.push("database.json");
+    if !database_path.exists() {
+        std::fs::File::create(&database_path)?;
+    }
+    Ok(database_path)
+}
+
+fn load_musics(context: &mut AppContext) -> Result<()> {
+    let database_json_path = get_database_json_path(context)?;
+    context.music.music_list = serde_json::from_str(std::fs::read_to_string(database_json_path)?.as_str()).unwrap_or(Vec::new());
+    Ok(())
+}
+
+fn update_library(context: &mut AppContext) -> Result<()> {
     let mut music_list = vec![];
     let music_path = match &context.config.path.music_path {
         Some(p) => p,
@@ -68,13 +90,13 @@ fn update_music_list(context: &mut AppContext) -> Result<()> {
                     artist,
                     duration,
                     path,
-                    lyric_path: None,
                 };
                 music_list.push(music);
             }
         }
     }
-    context.music.music_list = music_list;
+    let database_json_path = get_database_json_path(context)?;
+    serde_json::to_writer_pretty(std::fs::File::create(&database_json_path)?, &music_list)?;
     Ok(())
 }
 

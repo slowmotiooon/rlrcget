@@ -1,11 +1,13 @@
+use crate::model::lyrics::LyricsState;
+use crate::model::{lyrics::LyricsContext, music::MusicContext};
+use ratatui::text::Text;
+use ratatui::widgets::Wrap;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
     style::{Style, Stylize},
     widgets::{Block, Borders, Cell, Paragraph, Row, StatefulWidget, Table, TableState, Widget},
 };
-
-use crate::model::{lyrics::LyricsContext, music::MusicContext};
 
 pub struct MusicSelection<'a> {
     pub music_context: &'a MusicContext,
@@ -50,6 +52,16 @@ struct MusicTable<'a> {
 impl<'a> StatefulWidget for &MusicTable<'a> {
     type State = TableState;
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
+        let block = Block::new().title("Musics").borders(Borders::all());
+        if self.music_context.music_list.is_empty() {
+            let no_music_str = "No music.
+            If this is your first time opening this app, please refresh it with <r> or <F5>.";
+            let no_music_paragraph = Paragraph::new(Text::from(no_music_str))
+                .block(block)
+                .wrap(Wrap { trim: true });
+            Widget::render(no_music_paragraph, area, buf);
+            return;
+        }
         let rows = self
             .music_context
             .music_list
@@ -75,7 +87,6 @@ impl<'a> StatefulWidget for &MusicTable<'a> {
         let header = Row::new(vec!["No.", "Title", "Artist", "Album", "Duration"])
             .style(Style::new().bold().blue())
             .bottom_margin(1);
-        let block = Block::new().title("Musics").borders(Borders::all());
         let table = Table::new(rows, widths)
             .header(header)
             .block(block)
@@ -90,8 +101,18 @@ pub struct LyricBlock<'a> {
 
 impl<'a> Widget for &LyricBlock<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let block = Block::new().title("Lyric").borders(Borders::all());
+        let mut block = Block::new().title("Lyric").borders(Borders::all());
         if let Some(lyrics) = &self.context.current_lyrics {
+            let state_color = match lyrics.state() {
+                LyricsState::Synced => Style::default().green(),
+                LyricsState::Unsynced => Style::default().yellow(),
+                LyricsState::Empty => Style::default(),
+            };
+            block = block.border_style(state_color).title(match lyrics.state() {
+                LyricsState::Synced => "Synced",
+                LyricsState::Unsynced => "Unsynced",
+                LyricsState::Empty => "Empty",
+            });
             let lyrics_list = Table::new(
                 lyrics.lines.iter().map(|line| -> Row {
                     let timestamp = if let Some(ts) = line.timestamp {

@@ -48,6 +48,13 @@ fn handle_key_event(context: &mut AppContext, key_event: KeyEvent) -> Result<()>
             update(context, AppMsg::Lyrics(LyricsMsg::LoadLyricsPreview))?;
             Ok(())
         }
+        KeyCode::Char('r') | KeyCode::F(5) => {
+            update(context, AppMsg::Music(MusicMsg::UpdateLibrary))?;
+            update(context, AppMsg::Music(MusicMsg::LoadMusics))?;
+            update(context, AppMsg::Music(MusicMsg::ChangeSelected(0)))?;
+            update(context, AppMsg::Lyrics(LyricsMsg::LoadLyricsPreview))?;
+            Ok(())
+        }
         _ => Ok(()),
     }
 }
